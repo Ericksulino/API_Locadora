@@ -4,12 +4,12 @@ const path = require("path");
 
 const create = async (req, res) => {
     try {
-        if (req.user.role !== "Admin") {
+        if (req.role !== "Admin") {
             return res.status(403).send({ message: "Acesso não autorizado." });
         }
-        const { nome, categoria, tipo, descricao, valor, dataInicioLocacao, dataTerminoLocacao } = req.body;
+        const { nome, categoria, tipo, descricao, valor} = req.body;
 
-        if (!nome || !categoria || !tipo || !descricao || !valor || !dataInicioLocacao || !dataTerminoLocacao) {
+        if (!nome || !categoria || !tipo || !descricao || !valor) {
             res.status(400).send({ message: "Envie todos os campos para o registro!" });
         } else {
             try {
@@ -23,11 +23,8 @@ const create = async (req, res) => {
                     tipo,
                     descricao,
                     valor,
-                    locador: req.userId,
                     foto: img,
                     disponivel: true,
-                    dataInicioLocacao,
-                    dataTerminoLocacao,
                 });
 
                 if (!car) {
@@ -71,17 +68,17 @@ const findAll = async (req, res) => {
             return res.status(400).send({ message: "Não há carros cadastrados" });
         }
 
-        // Lógica para atualizar a disponibilidade com base nas datas de locação
-        cars.forEach(async (car) => {
-            const currentDate = new Date();
-            if (car.dataInicioLocacao <= currentDate && currentDate <= car.dataTerminoLocacao) {
-                // Carro não está disponível dentro do prazo de locação
-                await carService.updateAvailability(car._id, false);
-            } else {
-                // Carro está disponível quando não está dentro do prazo de locação
-                await carService.updateAvailability(car._id, true);
-            }
-        });
+        // // Lógica para atualizar a disponibilidade com base nas datas de locação
+        // cars.forEach(async (car) => {
+        //     const currentDate = new Date();
+        //     if (car.dataInicioLocacao <= currentDate && currentDate <= car.dataTerminoLocacao) {
+        //         // Carro não está disponível dentro do prazo de locação
+        //         await carService.updateAvailability(car._id, false);
+        //     } else {
+        //         // Carro está disponível quando não está dentro do prazo de locação
+        //         await carService.updateAvailability(car._id, true);
+        //     }
+        // });
 
         res.send({
             nextUrl,
@@ -98,10 +95,10 @@ const findAll = async (req, res) => {
                     descricao: car.descricao,
                     valor: car.valor,
                     foto: car.foto,
-                    locadorName: car.locador.name,
-                    locadorNumber: car.locador.number,
-                    locadorCity: car.locador.city,
-                    locadorUF: car.locador.state,
+                    // locadorName: car.locador.name,
+                    // locadorNumber: car.locador.number,
+                    // locadorCity: car.locador.city,
+                    // locadorUF: car.locador.state,
                     disponivel: car.disponivel,
                     dataInicioLocacao: car.dataInicioLocacao,
                     dataTerminoLocacao: car.dataTerminoLocacao,
@@ -116,6 +113,7 @@ const findAll = async (req, res) => {
 const rentCar = async (req, res) => {
     try {
         const id = req.params.id;
+        const locatario = req.userId; // Obtém o locatário do req.userId
         const prodCar = await carService.findByIdService(id);
 
         // Verifica se o carro está disponível para locação
@@ -123,18 +121,28 @@ const rentCar = async (req, res) => {
             return res.status(400).send({ message: "O carro não está disponível para locação." });
         }
 
-        // Atualiza o status do carro para não disponível
-        await carService.updateAvailability(id, false);
+        // Recebe o tempo de locação (em dias, por exemplo)
+        const { diasLocacao } = req.body;
 
-        // Registra a data de início da locação
+        if (!diasLocacao || diasLocacao <= 0) {
+            return res.status(400).send({ message: "Informe um período de locação válido." });
+        }
+
+        // Calcula a data de término da locação
         const currentDate = new Date();
-        await carService.updateRentDates(id, currentDate, undefined);
+        const dataTerminoLocacao = new Date(currentDate);
+        dataTerminoLocacao.setDate(currentDate.getDate() + diasLocacao);
+
+        // Atualiza o status do carro para não disponível e registra as datas de locação
+        await carService.updateAvailability(id, false);
+        await carService.updateRentDates(id, currentDate, dataTerminoLocacao, locatario);
 
         res.status(200).send({ message: "Carro alugado com sucesso!" });
     } catch (err) {
         res.status(500).send({ message: err.message });
     }
 };
+
 
 const topCar = async (req, res) => {
     try {
@@ -337,7 +345,7 @@ const filterByType = async (req, res) => {
 
 const update = async (req, res) => {
     try {
-        if (req.user.role !== "Admin") {
+        if (req.role !== "Admin") {
             return res.status(403).send({ message: "Acesso não autorizado." });
         }
         const { nome, categoria, tipo, descricao, valor, dataInicioLocacao, dataTerminoLocacao } = req.body;
@@ -384,7 +392,7 @@ const update = async (req, res) => {
 };
 
 const erase = async (req, res) => {
-    if (req.user.role !== "Admin") {
+    if (req.role !== "Admin") {
         return res.status(403).send({ message: "Acesso não autorizado." });
     }
     try {

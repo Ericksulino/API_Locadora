@@ -25,6 +25,7 @@ module.exports = authMiddleware = (req,res,next)=>{
             console.log(decode);
             const user = await userService.findByIdService(decode.id);
             req.userId = user.id;
+            req.role = user.role;
             return next();
         })
         

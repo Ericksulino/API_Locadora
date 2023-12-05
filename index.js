@@ -28,7 +28,7 @@ const authRote = require("./src/routes/auth.route");
 const secureRoute = require("./src/routes/secure.route");
 
 //Rota com o Banco de dados
-//const connectDatabase = require("./src/database/db")
+const connectDatabase = require("./src/database/db")
 
 //rota para imagens
 
@@ -54,7 +54,7 @@ app.use(bodyParser.urlencoded({extended:false}));
 app.use(bodyParser.json());
 
 //Conexão com o Banco de dados
-//connectDatabase()
+connectDatabase()
 
 //Rotas do backend
 app.use("/user",userRoute);
