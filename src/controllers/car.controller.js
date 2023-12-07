@@ -133,15 +133,26 @@ const rentCar = async (req, res) => {
         const dataTerminoLocacao = new Date(currentDate);
         dataTerminoLocacao.setDate(currentDate.getDate() + diasLocacao);
 
-        // Atualiza o status do carro para não disponível e registra as datas de locação
-        await carService.updateAvailability(id, false);
-        await carService.updateRentDates(id, currentDate, dataTerminoLocacao, locatario);
+        // Verifica se a data de término é válida
+        if (isNaN(dataTerminoLocacao.getTime())) {
+            return res.status(400).send({ message: "A data de término de locação não é válida." });
+        }
+
+        // Atualiza o status do carro para não disponível e adiciona o locatário
+        const updatedCar = await carService.addLocatarioService(id, locatario);
+        // Atualiza as datas de início e término da locação
+        const updateCarDates = await carService.updateRentDates(id, currentDate, dataTerminoLocacao, false);
+        if (!updatedCar || updateCarDates) {
+            return res.status(500).send({ message: "Erro ao alugar o carro." });
+        }
+
 
         res.status(200).send({ message: "Carro alugado com sucesso!" });
     } catch (err) {
         res.status(500).send({ message: err.message });
     }
 };
+
 
 
 const topCar = async (req, res) => {

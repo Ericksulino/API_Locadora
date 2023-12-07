@@ -31,6 +31,44 @@ const updateService = (id, nome, categoria, tipo, descricao, valor, foto) =>
         {rawResult: true}
     );
 
+const updateRentDates = async (id, dataInicioLocacao, dataTerminoLocacao, disponivel) => {
+    const updatedCar = await Car.findByIdAndUpdate(
+        id,
+        {
+            $set: {
+                dataInicioLocacao,
+                dataTerminoLocacao,
+                disponivel,
+            },
+        },
+        { new: true }
+    );
+
+    return updatedCar;
+};
+
+const addLocatarioService = async (carId, userId) => {
+        const updatedCar = await Car.findOneAndUpdate(
+            {_id: carId},
+            {locatario: userId},
+            {new: true} // Retorna o documento atualizado
+        );
+    
+        return updatedCar;
+};
+    
+const removeLocatarioService = async (carId) => {
+    const updatedCar = await Car.findOneAndUpdate(
+        {_id: carId},
+        {locatario: null},
+        {new: true} // Retorna o documento atualizado
+    );
+
+    return updatedCar;
+};
+
+
+
 const eraseService = (id) => Car.findByIdAndDelete({_id: id});
 
 module.exports = {
@@ -44,5 +82,8 @@ module.exports = {
     filterByCategoryService,
     filterByTypeService,
     updateService,
+    updateRentDates,
+    addLocatarioService,
+    removeLocatarioService,
     eraseService
 };
