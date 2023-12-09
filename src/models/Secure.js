@@ -1,43 +1,24 @@
 const mongoose = require('mongoose');
 
 const SecureSchema = new mongoose.Schema({
-    policyNumber: {
+    descricao: {
         type: String,
         required: true,
     },
-    startDate: {
-        type: Date,
-        required: true,
-    },
-    endDate: {
-        type: Date,
-        required: true,
-    },
-    coverageAmount: {
+    coberturaDanos: [{
+        type: {
+            type: String,
+            required: true,
+            enum: ['Colisão', 'Abrangente', 'Responsabilidade Civil', 'Furto', 'Incêndio'],
+        },
+    }],
+    valorCobertura: {
         type: Number,
         required: true,
     },
-    deductibleAmount: {
+    valorFranquia: {
         type: Number,
         required: true,
-    },
-    insuredCar: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Car',
-        required: true,
-    },
-    policyHolder: {
-        name: {
-            type: String,
-            required: true,
-        },
-        email: {
-            type: String,
-            required: true,
-        },
-    },
-    additionalNotes: {
-        type: String,
     },
 });
 
