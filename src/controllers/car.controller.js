@@ -68,18 +68,6 @@ const findAll = async (req, res) => {
             return res.status(400).send({ message: "Não há carros cadastrados" });
         }
 
-        // // Lógica para atualizar a disponibilidade com base nas datas de locação
-        // cars.forEach(async (car) => {
-        //     const currentDate = new Date();
-        //     if (car.dataInicioLocacao <= currentDate && currentDate <= car.dataTerminoLocacao) {
-        //         // Carro não está disponível dentro do prazo de locação
-        //         await carService.updateAvailability(car._id, false);
-        //     } else {
-        //         // Carro está disponível quando não está dentro do prazo de locação
-        //         await carService.updateAvailability(car._id, true);
-        //     }
-        // });
-
         res.send({
             nextUrl,
             previousUrl,
@@ -95,10 +83,6 @@ const findAll = async (req, res) => {
                     descricao: car.descricao,
                     valor: car.valor,
                     foto: car.foto,
-                    // locadorName: car.locador.name,
-                    // locadorNumber: car.locador.number,
-                    // locadorCity: car.locador.city,
-                    // locadorUF: car.locador.state,
                     disponivel: car.disponivel,
                     dataInicioLocacao: car.dataInicioLocacao,
                     dataTerminoLocacao: car.dataTerminoLocacao,
@@ -114,45 +98,30 @@ const rentCar = async (req, res) => {
     try {
         const id = req.params.id;
         const locatario = req.userId; // Obtém o locatário do req.userId
-        const prodCar = await carService.findByIdService(id);
+        const { seguro, dataInicioLocacao, dataTerminoLocacao } = req.body;
 
         // Verifica se o carro está disponível para locação
+        const prodCar = await carService.findByIdService(id);
         if (!prodCar.disponivel) {
             return res.status(400).send({ message: "O carro não está disponível para locação." });
         }
 
-        // Recebe o tempo de locação (em dias, por exemplo)
-        const { diasLocacao } = req.body;
-
-        if (!diasLocacao || diasLocacao <= 0) {
-            return res.status(400).send({ message: "Informe um período de locação válido." });
-        }
-
-        // Calcula a data de término da locação
-        const currentDate = new Date();
-        const dataTerminoLocacao = new Date(currentDate);
-        dataTerminoLocacao.setDate(currentDate.getDate() + diasLocacao);
-
-        // Verifica se a data de término é válida
-        if (isNaN(dataTerminoLocacao.getTime())) {
-            return res.status(400).send({ message: "A data de término de locação não é válida." });
-        }
-
         // Atualiza o status do carro para não disponível e adiciona o locatário
         const updatedCar = await carService.addLocatarioService(id, locatario);
+
         // Atualiza as datas de início e término da locação
-        const updateCarDates = await carService.updateRentDates(id, currentDate, dataTerminoLocacao, false);
-        if (!updatedCar || updateCarDates) {
+        const updateCarDates = await carService.updateRentDates(id, dataInicioLocacao, dataTerminoLocacao, false);
+
+        // Verifica se houve algum erro nas operações
+        if (!updatedCar || !updateCarDates) {
             return res.status(500).send({ message: "Erro ao alugar o carro." });
         }
-
 
         res.status(200).send({ message: "Carro alugado com sucesso!" });
     } catch (err) {
         res.status(500).send({ message: err.message });
     }
 };
-
 
 
 const topCar = async (req, res) => {

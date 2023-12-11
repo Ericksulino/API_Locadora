@@ -5,6 +5,12 @@ const CarSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    seguro: {
+        type: mongoose.Schema.Types.ObjectId,
+        default: mongoose.Types.ObjectId,
+        required: false,
+        unique: true,
+    },
     categoria: {
         type: String,
         required: true,
