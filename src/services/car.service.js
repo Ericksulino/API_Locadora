@@ -2,7 +2,15 @@ const Car = require("../models/Car");
 
 const createService = (body) => Car.create(body);
 
-const findAllService = (offset, limit) => Car.find().sort({_id: -1}).skip(offset).limit(limit).populate("locatario");
+const findAllService = (offset, limit, disponivel) => {
+    const query = disponivel !== undefined ? { disponivel } : {};
+
+    return Car.find(query)
+        .sort({ _id: -1 })
+        .skip(offset)
+        .limit(limit)
+        .populate("locatario");
+};
 
 const countCars = () => Car.countDocuments();
 
@@ -31,7 +39,7 @@ const updateService = (id, nome, categoria, tipo, descricao, valor, foto) =>
         {rawResult: true}
     );
 
-const updateRentDates = async (id, dataInicioLocacao, dataTerminoLocacao, disponivel) => {
+const updateRentDates = async (id, dataInicioLocacao, dataTerminoLocacao, disponivel, seguro) => {
     const updatedCar = await Car.findByIdAndUpdate(
         id,
         {
@@ -39,6 +47,7 @@ const updateRentDates = async (id, dataInicioLocacao, dataTerminoLocacao, dispon
                 dataInicioLocacao,
                 dataTerminoLocacao,
                 disponivel,
+                seguro: seguro,
             },
         },
         { new: true }
@@ -57,16 +66,25 @@ const addLocatarioService = async (carId, userId) => {
         return updatedCar;
 };
     
-const removeLocatarioService = async (carId) => {
-    const updatedCar = await Car.findOneAndUpdate(
-        {_id: carId},
-        {locatario: null},
-        {new: true} // Retorna o documento atualizado
-    );
+const removeLocatarioService = async (id) => {
+    try {
+        const updatedCar = await Car.findByIdAndUpdate(
+            id,
+            {
+                locatario: null,
+                dataInicioLocacao: null,
+                dataTerminoLocacao: null,
+                seguro: null,
+                disponivel: true,
+            },
+            { new: true }
+        );
 
-    return updatedCar;
+        return updatedCar;
+    } catch (error) {
+        throw new Error(error.message);
+    }
 };
-
 
 
 const eraseService = (id) => Car.findByIdAndDelete({_id: id});

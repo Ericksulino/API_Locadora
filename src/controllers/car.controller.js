@@ -43,7 +43,7 @@ const create = async (req, res) => {
 
 const findAll = async (req, res) => {
     try {
-        let { limit, offset } = req.query;
+        let { limit, offset, disponivel} = req.query;
         limit = Number(limit);
         offset = Number(offset);
 
@@ -53,8 +53,9 @@ const findAll = async (req, res) => {
         if (!offset) {
             offset = 0;
         }
-
-        const cars = await carService.findAllService(offset, limit);
+        // Convertendo 'disponivel' para booleano
+        disponivel = disponivel === 'true';
+        const cars = await carService.findAllService(offset, limit, disponivel);
         const total = await carService.countCars();
         const currentUrl = req.baseUrl;
 
@@ -110,7 +111,7 @@ const rentCar = async (req, res) => {
         const updatedCar = await carService.addLocatarioService(id, locatario);
 
         // Atualiza as datas de início e término da locação
-        const updateCarDates = await carService.updateRentDates(id, dataInicioLocacao, dataTerminoLocacao, false);
+        const updateCarDates = await carService.updateRentDates(id, dataInicioLocacao, dataTerminoLocacao, false, seguro);
 
         // Verifica se houve algum erro nas operações
         if (!updatedCar || !updateCarDates) {
@@ -118,6 +119,36 @@ const rentCar = async (req, res) => {
         }
 
         res.status(200).send({ message: "Carro alugado com sucesso!" });
+    } catch (err) {
+        res.status(500).send({ message: err.message });
+    }
+};
+
+const returnCar = async (req, res) => {
+    try {
+        const id = req.params.id;
+        const locatario = req.userId; // Obtém o locatário do req.userId
+
+        // Verifica se o carro está disponível para desaluguel
+        const prodCar = await carService.findByIdService(id);
+        if (!prodCar || prodCar.disponivel) {
+            return res.status(400).send({ message: "O carro não está disponível para desaluguel." });
+        }
+
+        // Verifica se o locatário atual é quem está tentando desalugar
+        if (!prodCar.locatario.equals(locatario)) {
+            return res.status(403).send({ message: "Você não tem permissão para desalugar este carro." });
+        }
+
+        // Atualiza o status do carro para disponível e remove o locatário
+        const updatedCar = await carService.removeLocatarioService(id);
+
+        // Verifica se houve algum erro nas operações
+        if (!updatedCar) {
+            return res.status(500).send({ message: "Erro ao desalugar o carro." });
+        }
+
+        res.status(200).send({ message: "Carro desalugado com sucesso!" });
     } catch (err) {
         res.status(500).send({ message: err.message });
     }
@@ -173,11 +204,8 @@ const findById = async (req, res) => {
                 descricao: prodCar.descricao,
                 valor: prodCar.valor,
                 foto: prodCar.foto,
-                locadorName: prodCar.locador.name,
-                locadorNumber: prodCar.locador.number,
-                locadorCity: prodCar.locador.city,
-                locadorUF: prodCar.locador.state,
                 disponivel: prodCar.disponivel,
+                seguro: prodCar.seguro,
                 dataInicioLocacao: prodCar.dataInicioLocacao,
                 dataTerminoLocacao: prodCar.dataTerminoLocacao,
             },
@@ -206,10 +234,6 @@ const searchByNome = async (req, res) => {
                     tipo: prodCar.tipo,
                     valor: prodCar.valor,
                     foto: prodCar.foto,
-                    locadorName: prodCar.locador.name,
-                    locadorNumber: prodCar.locador.number,
-                    locadorCity: prodCar.locador.city,
-                    locadorUF: prodCar.locador.state,
                     disponivel: prodCar.disponivel,
                     dataInicioLocacao: prodCar.dataInicioLocacao,
                     dataTerminoLocacao: prodCar.dataTerminoLocacao,
@@ -240,11 +264,8 @@ const byUser = async (req, res) => {
                     tipo: prodCar.tipo,
                     valor: prodCar.valor,
                     foto: prodCar.foto,
-                    locadorName: prodCar.locador.name,
-                    locadorNumber: prodCar.locador.number,
-                    locadorCity: prodCar.locador.city,
-                    locadorUF: prodCar.locador.state,
                     disponivel: prodCar.disponivel,
+                    seguro: prodCar.seguro,
                     dataInicioLocacao: prodCar.dataInicioLocacao,
                     dataTerminoLocacao: prodCar.dataTerminoLocacao,
                 };
@@ -274,10 +295,6 @@ const filterByCategory = async (req, res) => {
                     tipo: prodCar.tipo,
                     valor: prodCar.valor,
                     foto: prodCar.foto,
-                    locadorName: prodCar.locador.name,
-                    locadorNumber: prodCar.locador.number,
-                    locadorCity: prodCar.locador.city,
-                    locadorUF: prodCar.locador.state,
                     disponivel: prodCar.disponivel,
                     dataInicioLocacao: prodCar.dataInicioLocacao,
                     dataTerminoLocacao: prodCar.dataTerminoLocacao,
@@ -308,10 +325,6 @@ const filterByType = async (req, res) => {
                     descricao: prodCar.descricao,
                     valor: prodCar.valor,
                     foto: prodCar.foto,
-                    locadorName: prodCar.locador.name,
-                    locadorNumber: prodCar.locador.number,
-                    locadorCity: prodCar.locador.city,
-                    locadorUF: prodCar.locador.state,
                     disponivel: prodCar.disponivel,
                     dataInicioLocacao: prodCar.dataInicioLocacao,
                     dataTerminoLocacao: prodCar.dataTerminoLocacao,
@@ -396,6 +409,7 @@ module.exports = {
     create,
     findAll,
     rentCar,
+    returnCar,
     topCar,
     findById,
     searchByNome,

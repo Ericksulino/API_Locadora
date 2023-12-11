@@ -8,6 +8,9 @@ route.post("/", authMiddleware, upload.single("file"), carController.create);
 // Nova rota para alugar um carro
 route.post("/rent/:id", authMiddleware, carController.rentCar);
 
+// Nova rota para desalugar um carro
+route.patch('/return/:id', authMiddleware, carController.returnCar);
+
 route.get("/", carController.findAll);
 
 route.get("/top", carController.topCar);
