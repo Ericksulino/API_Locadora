@@ -3,7 +3,7 @@ const secureController = require('../controllers/secure.controller');
 const authMiddleware = require("../middleware/auth.middlieware");
 
 // Rotas para CRUD (Create, Read, Update, Delete)
-route.post("/",secureController.create); // Rota para criar um novo seguro
+route.post("/",authMiddleware, secureController.create); // Rota para criar um novo seguro
 
 route.get("/", secureController.findAll); // Rota para buscar todos os seguros
 

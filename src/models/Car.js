@@ -7,9 +7,7 @@ const CarSchema = new mongoose.Schema({
     },
     seguro: {
         type: mongoose.Schema.Types.ObjectId,
-        default: mongoose.Types.ObjectId,
         required: false,
-        unique: true,
     },
     categoria: {
         type: String,

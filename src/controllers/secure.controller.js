@@ -2,6 +2,9 @@ const secureService = require('../services/secure.service');
 
 const create = async (req, res) => {
     try {
+        if (req.role !== "Admin") {
+            return res.status(403).send({ message: "Acesso não autorizado." });
+        }
         const { descricao, coberturaDanos, valorCobertura, valorFranquia } = req.body;
 
         // Verifique se todos os campos necessários estão presentes
