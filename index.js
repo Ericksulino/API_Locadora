@@ -38,7 +38,7 @@ const imgRouter = require("./src/routes/img.route");
 
 //Propriedades do servidor
 const app = express();
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 443;
 
 
 //app.set('view engine', 'ejs');
