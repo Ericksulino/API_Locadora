@@ -4,6 +4,9 @@ FROM node:18.19.0-alpine3.18
 # Defina o diretório de trabalho
 WORKDIR /home/node/app
 
+# Atualize o npm
+RUN npm install -g npm@latest
+
 # Copie os arquivos do seu aplicativo para o diretório de trabalho
 COPY package.json package-lock.json /home/node/app/
 
